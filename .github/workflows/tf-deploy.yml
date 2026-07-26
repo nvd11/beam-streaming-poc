@@ -1,0 +1,52 @@
+name: Deploy Terraform Infrastructure
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'tf-infra/**'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'tf-infra/**'
+
+jobs:
+  terraform:
+    name: 'Terraform Plan & Apply'
+    runs-on: ubuntu-latest
+    
+    # 指定工作目录为 tf-infra
+    defaults:
+      run:
+        working-directory: ./tf-infra
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      # 使用 Google 官方 Action 进行身份验证
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: '${{ secrets.GCP_CREDENTIALS }}'
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      - name: Terraform Init
+        run: terraform init
+
+      - name: Terraform Format
+        run: terraform fmt -check
+        continue-on-error: true
+
+      - name: Terraform Plan
+        # 在 PR 阶段或者 push 阶段都先跑个 Plan
+        run: terraform plan -no-color
+
+      - name: Terraform Apply
+        # 只有在推送到 main 分支时，才执行 Apply 应用更改
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        run: terraform apply -auto-approve
