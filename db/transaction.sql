@@ -12,3 +12,6 @@ CREATE TABLE IF NOT EXISTS transaction (
     INDEX idx_txn_event_time (event_time),
     INDEX idx_txn_counterparty (counterparty)
 );
+
+-- Trigger workflow test (Cindy was here 💋)
+
