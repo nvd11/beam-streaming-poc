@@ -1,0 +1,20 @@
+CREATE TABLE IF NOT EXISTS alert (
+    alert_id          BIGINT      NOT NULL AUTO_INCREMENT,
+    window_type       VARCHAR(16) NOT NULL,
+    account_id        VARCHAR(32) NOT NULL,
+    total_amount      DECIMAL(16,2) NOT NULL,
+    alert_level       VARCHAR(8)  NOT NULL,
+    threshold         DECIMAL(16,2) NOT NULL,
+    exceeded_amount   DECIMAL(16,2),
+    transaction_count INT,
+    window_start      DATETIME    NOT NULL,
+    window_end        DATETIME    NOT NULL,
+    has_late_data     BOOLEAN     DEFAULT FALSE,
+    alert_time        DATETIME    DEFAULT CURRENT_TIMESTAMP,
+    status            VARCHAR(16) DEFAULT 'NEW',
+    PRIMARY KEY (alert_id),
+    INDEX idx_alert_account (account_id),
+    INDEX idx_alert_level (alert_level),
+    INDEX idx_alert_time (alert_time),
+    INDEX idx_alert_status (status)
+);

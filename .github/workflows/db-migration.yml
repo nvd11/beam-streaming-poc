@@ -1,0 +1,58 @@
+name: Execute Modified SQL Scripts
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'db/**/*.sql'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'db/**/*.sql'
+
+jobs:
+  execute-sql:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # 必须设置为 0，这样才能对比历史提交，找出具体修改了哪些文件
+
+      - name: Get Changed SQL Files
+        id: changed-files
+        uses: tj-actions/changed-files@v44
+        with:
+          files: db/**/*.sql
+
+      - name: Setup MySQL Client
+        if: steps.changed-files.outputs.any_changed == 'true'
+        run: sudo apt-get update && sudo apt-get install -y mysql-client
+
+      - name: Load DB Config
+        if: steps.changed-files.outputs.any_changed == 'true'
+        run: cat db.config >> $GITHUB_ENV
+
+      - name: Execute Changed SQL Files
+        if: steps.changed-files.outputs.any_changed == 'true'
+        env:
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+        run: |
+          # 遍历所有被修改的 sql 文件并执行
+          for file in ${{ steps.changed-files.outputs.all_changed_files }}; do
+            echo "====================================="
+            echo "🚀 准备执行: $file"
+            echo "====================================="
+            
+            # 使用 mysql 客户端执行 SQL 文件
+            mysql -h"$DB_HOST" -P"$DB_PORT" -u"$DB_USER" -p"$DB_PASSWORD" "$DB_NAME" < "$file"
+            
+            if [ $? -eq 0 ]; then
+              echo "✅ $file 执行成功!"
+            else
+              echo "❌ $file 执行失败!"
+              exit 1
+            fi
+          done
